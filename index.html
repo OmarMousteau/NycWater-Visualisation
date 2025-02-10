@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NYC Water</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.5.0/nouislider.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.5.0/nouislider.min.js"></script>
+</head>
+<body>
+    <h1 style="text-align: center;">Water consumption and prices in New York City</h1>
+    <div id="slider-container">
+        <div id="date-slider"></div>
+        <p id="date-display"></p>
+    </div>
+    <div id="selection-container" style="text-align: center;">
+        <label for="consumption-select">Volume unit :</label>
+        <select id="consumption-select">
+            <option value="Consumption (HCF)">HCF</option>
+            <option value="Consumption (m3)">m3</option>
+        </select>
+    </div>
+    <div id="bar-chart"></div>
+    <script src="app.js"></script>
+</body>
+</html>
