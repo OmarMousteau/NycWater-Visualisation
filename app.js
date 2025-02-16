@@ -77,7 +77,7 @@ d3.csv("NY.csv").then(ny_raw => {
   consumptionSelect.addEventListener('change', function() {
     consumption = this.value;
     console.log(`Selected consumption unit: ${consumption}`);
-    unit = (consumptionSelect.value == "Consumption (m3)") ? "m3" : "HCF";
+    volume_unit = (consumptionSelect.value == "Consumption (m3)") ? "m3" : "HCF";
     updateScorecards();
   });
 
