@@ -25,6 +25,8 @@ d3.csv("NY.csv").then(ny_raw => {
   const minDate = d3.min(ny, d => d["Revenue Month"]);
   const maxDate = d3.max(ny, d => d["Revenue Month"]);
 
+  let ny_filtered = ny.slice();
+
   const dateSlider = document.getElementById('date-slider');
 
   noUiSlider.create(dateSlider, {
@@ -54,9 +56,10 @@ d3.csv("NY.csv").then(ny_raw => {
     const minDateValue = new Date(+sliderValues[0]);
     const maxDateValue = new Date(+sliderValues[1]);
 
-    const filtered_ny = ny.filter(d => d["Revenue Month"] >= minDateValue && d["Revenue Month"] <= maxDateValue);
+    ny_filtered = ny.filter(d => d["Revenue Month"] >= minDateValue && d["Revenue Month"] <= maxDateValue);
     console.log('timeframe :',minDateValue, maxDateValue);
-    console.log('ny filtered length :',filtered_ny.length);
+    console.log('ny filtered length :',ny_filtered.length);
+    updateScorecards();
   }
 
   // Call filterData whenever the slider values change
@@ -69,81 +72,262 @@ d3.csv("NY.csv").then(ny_raw => {
   const consumptionSelect = document.getElementById('consumption-select');
   let consumption = consumptionSelect.value;
 
+  volume_unit = (consumptionSelect.value == "Consumption (m3)") ? "m3" : "HCF";
+
   consumptionSelect.addEventListener('change', function() {
     consumption = this.value;
     console.log(`Selected consumption unit: ${consumption}`);
-    // Update your visualization logic here based on the selected consumption unit
+    unit = (consumptionSelect.value == "Consumption (m3)") ? "m3" : "HCF";
+    updateScorecards();
   });
 
   // #endregion
 
-  // // #region Bar Chart
+  // #region Map
 
-  // // Group data by year and calculate total consumption for each year
-  // function getYearlyConsumption(data, consumptionUnit) {
-  //   const yearlyData = d3.rollup(data, 
-  //     v => d3.sum(v, d => d[consumptionUnit]), 
-  //     d => d["Revenue Month"].getFullYear()
-  //   );
-  //   return Array.from(yearlyData, ([year, totalConsumption]) => ({ year, totalConsumption }));
-  // }
+  d3.json("new-york-city-boroughs.geojson").then(Boroughs => {
+      drawMap(Boroughs);
+  });
 
-  // // Create the bar chart
-  // function createBarChart(data) {
-  //   const margin = { top: 20, right: 30, bottom: 40, left: 40 };
-  //   const width = 800 - margin.left - margin.right;
-  //   const height = 400 - margin.top - margin.bottom;
+  function drawMap(Boroughs) {
+    let BoroughsSelected = [];
+    
+    const width = 800; 
+    const height = 675;
+    
+    let projection = d3.geoAlbersUsa().fitSize([width, height], Boroughs);
+    
+    const svgMap = d3.select("#NYCMap").append("svg")
+        .attr("viewBox", [0, 0, width, height]);
 
-  //   const svg = d3.select("#bar-chart")
-  //     .append("svg")
-  //     .attr("width", width + margin.left + margin.right)
-  //     .attr("height", height + margin.top + margin.bottom)
-  //     .append("g")
-  //     .attr("transform", `translate(${margin.left},${margin.top})`);
+    var tooltip = d3.select('body').append('div')
+        .attr("class", "svg-tooltip")
+        .style("position", "absolute")
+        .style("visibility", "hidden")
+        .style("background-color", "#9ec9e1")
+        .style("border-radius", "2px")
+        .style("padding", "0.5em");
 
-  //   const x = d3.scaleBand()
-  //     .domain(data.map(d => d.year))
-  //     .range([0, width])
-  //     .padding(0.1);
+    var g = svgMap.append("g");
 
-  //   const y = d3.scaleLinear()
-  //     .domain([0, d3.max(data, d => d.totalConsumption)])
-  //     .nice()
-  //     .range([height, 0]);
+    var path = d3.geoPath().projection(projection);
 
-  //   svg.append("g")
-  //     .selectAll(".bar")
-  //     .data(data)
-  //     .enter().append("rect")
-  //     .attr("class", "bar")
-  //     .attr("x", d => x(d.year))
-  //     .attr("y", d => y(d.totalConsumption))
-  //     .attr("width", x.bandwidth())
-  //     .attr("height", d => height - y(d.totalConsumption))
-  //     .attr("fill", "steelblue");
+    g.selectAll("path")
+        .data(Boroughs.features)
+        .join("path")
+        .attr("d", path)
+        .style("stroke", "white")
+        .style("fill", "grey")
+        .attr("data-selected", "false")
+        .on('mouseover', function(e, d) {
+            tooltip.style("visibility", "visible");
+            tooltip.text("Borough : " + d.properties.name);
+            d3.select(this).style("stroke", "black").style("stroke-width", "2px");
+        })
+        .on('mousemove', function(e, d) {
+            tooltip.style("top", (e.pageY - 10) + "px")
+                   .style("left", (e.pageX + 10) + "px");
+        })
+        .on('mouseout', function(e, d) {
+            tooltip.style('visibility', 'hidden');
+            d3.select(this).style("stroke", "white").style("stroke-width", "1px");
+        })
+        .on("click", function(e, d) {
+            let isSelected = d3.select(this).attr("data-selected") === "true";
+            if (isSelected) {
+                BoroughsSelected = BoroughsSelected.filter(name => name !== d.properties.name);
+            } else {
+                BoroughsSelected.push(d.properties.name);
+            }
+            d3.select(this).attr("data-selected", isSelected ? "false" : "true")
+                          .style("fill", isSelected ? "gray" : "#0b4b91");
+            console.log("Boroughs selected:", BoroughsSelected);
+        });
+}
 
-  //   svg.append("g")
-  //     .attr("class", "x-axis")
-  //     .attr("transform", `translate(0,${height})`)
-  //     .call(d3.axisBottom(x));
+  // #endregion
 
-  //   svg.append("g")
-  //     .attr("class", "y-axis")
-  //     .call(d3.axisLeft(y));
-  // }
+  // #region Scorecards
 
-  // // Update the bar chart based on the filtered data
-  // function updateBarChart() {
-  //   const filteredData = filterData();
-  //   const yearlyConsumption = getYearlyConsumption(filteredData, consumption);
-  //   d3.select("#bar-chart").selectAll("*").remove();
-  //   createBarChart(yearlyConsumption);
-  // }
+  function updateScorecards() {
+    let total_consumption = d3.sum(ny_filtered, d => d[consumptionSelect.value]);
+    let total_waterCharges = d3.sum(ny_filtered, d => d["Water&Sewer Charges"]);
+    let pricePerUnit = total_waterCharges/total_consumption;
+    let otherCharges = d3.sum(ny_filtered, d => d["Other Charges"]);
+    
+    document.getElementById("water-consumption").innerHTML = `💧 Consumption : ${total_consumption.toFixed(0)} ${volume_unit}`;
+    document.getElementById("total-price").innerHTML = `💰 Total Charges : $${total_waterCharges.toFixed(2)}`;
+    document.getElementById("price-per-unit").innerHTML = `📏 Price/${volume_unit} : $${pricePerUnit.toFixed(2)}`;
+    document.getElementById("other-charges").innerHTML = `📌 Other charges : $${otherCharges.toFixed(2)}`;
 
-  // // Initial bar chart
-  // updateBarChart();
+    console.log('total_consumption :',total_consumption);
+  }
 
-  // // Update bar chart whenever the slider values or consumption unit change
-  // dateSlider.noUiSlider.on('change', updateBarChart);
-  // consumptionSelect.addEventListener('change', updateBarChart);
+  updateScorecards();
+
+  // #endregion
+
+  // #region LineChart
+
+  function lineChart (data, x_value, y_value, color_value, div_id)
+  {
+    const width = 1200;
+    const height = 400;
+    const margin = { top: 20, right: 30, bottom: 30, left: 50 };
+
+    const legendRectWidth = 10
+    const legendRectHeight = 10
+    const legendXPosition = margin.left +100
+    const legendVerticalPadding = 10
+    const legendHorizontalPadding = 15
+    const yAxisTextVerticalPadding = 45
+    const xAxisTextVerticalPadding = 10
+    const axisTextHorizontalPadding = 35
+
+    const color = d3.scaleOrdinal(d3.schemeCategory10)
+
+    const svgLineChart = d3.select(`#${div_id}`).append("svg")
+      .attr("viewBox", [0, 0, width, height]);
+
+    const scaleX = d3.scaleUtc()
+      //.domain([d3.max(data, d => d[x_value]), d3.max(data, d => d[x_value])])
+      .domain(d3.extent(data, d => d[x_value]))
+      .range([margin.left, width - margin.right]);
+    
+    const scaleY = d3.scaleLinear()
+      .domain([0, d3.max(data, d => d[y_value])])
+      .range([height - margin.bottom, margin.top]);
+
+    svgLineChart.selectAll("circle")
+      .data(data)
+      .enter()
+      .append("circle")
+      .attr("cx", (d, i) => scaleX(d[x_value]))
+      .attr("cy", (d, i) => scaleY(d[y_value]))
+      .attr("r", 2)
+      .style("fill", d => color(d[color_value]))
+
+    const grouped_data = d3.group(data, d => d[color_value]);
+
+    const line = d3.line()
+        .x(d => scaleX(d[x_value]))
+        .y(d => scaleY(d[y_value]));
+
+    svgLineChart.selectAll("path")
+      .data(grouped_data)
+      .enter()
+      .append("path")
+      .attr("d", d => line(d[1]))
+      .attr("stroke", d => color(d[0]))
+      .attr("fill", "none")
+
+    const xAxis = createAxis(scaleX, d3.axisBottom, `translate(0, ${height - margin.bottom})`)  
+    svgLineChart.append("g")
+        .call(xAxis);
+
+    const yAxis = createAxis(scaleY, d3.axisLeft, `translate(${margin.left}, 0)`)
+    svgLineChart.append("g")
+        .call(yAxis);
+
+    const colors_values = new Set(data.map(d => d[color_value]))
+
+    createLegend(svgLineChart, legendXPosition, colors_values, color, {
+      width,
+      margin,
+      rectWidth: legendRectWidth,
+      rectHeight: legendRectHeight,
+      verticalPadding: legendVerticalPadding,
+      horizontalPadding: legendHorizontalPadding,
+    });
+
+    svgLineChart.append("text")
+      .attr("x", margin.left)
+      .attr("y", margin.top + yAxisTextVerticalPadding)
+      .attr("transform", `rotate(-90, ${margin.left - axisTextHorizontalPadding}, ${margin.top + yAxisTextVerticalPadding})`)
+      .text(y_value)
+      .attr("text-anchor", "end")
+      .style("font-size", "13px");
+
+    svgLineChart.append("text")
+      .attr("x", width - margin.right - axisTextHorizontalPadding)
+      .attr("y", height - margin.bottom - xAxisTextVerticalPadding)
+      .text(x_value)
+      .attr("text-anchor", "end")
+      .style("font-size", "13px");
+  }
+
+  function createAxis(scale, orientation, transform) {
+    return g => g.attr("transform", transform).call(orientation(scale));
+  }
+
+  function createLegend(svg, x_position, data, color, config) {
+    const legend = svg.selectAll(".legend")
+      .data(data)
+      .enter()
+      .append("g")
+      .attr("class", "legend")
+      .attr("transform", (d, i) => `translate(0, ${config.margin.top + i * (config.rectHeight + config.verticalPadding)})`);
+  
+    legend.append("rect")
+      //.attr("x", config.width - config.margin.right - config.rectWidth)
+      .attr("x", x_position)
+      .attr("y", 0)
+      .attr("width", config.rectWidth)
+      .attr("height", config.rectHeight)
+      .style("fill", d => color(d));
+  
+    legend.append("text")
+      //.attr("x", config.width - config.margin.right - config.rectWidth - config.horizontalPadding)
+      .attr("x", x_position - config.horizontalPadding)
+      .attr("y", config.rectHeight / 2)
+      .attr("dy", "0.35em")
+      .text(d => d)
+      .attr("text-anchor", "end");
+  }
+  
+
+  let ny_consumption_by_borough_map = [...d3.rollup(ny_filtered,  
+    v => d3.sum(v, v => v[consumptionSelect.value]),
+    d => d["Borough"],
+    d => d["Revenue Month"])]
+
+  let ny_consumption_by_borough = [];
+
+  ny_consumption_by_borough_map.forEach(([borough, dataMap]) => {
+    dataMap.forEach((consumption, date) => {
+        ny_consumption_by_borough.push({
+            Borough: borough,
+            "Revenue Month": date, 
+            Consumption: consumption
+        });
+    });
+  });
+
+  let ny_charges_by_borough_map = [...d3.rollup(ny_filtered,  
+    v => d3.sum(v, v => v["Water&Sewer Charges"]),
+    d => d["Borough"],
+    d => d["Revenue Month"])]
+
+  let ny_charges_by_borough = [];
+
+  ny_charges_by_borough_map.forEach(([borough, dataMap]) => {
+    dataMap.forEach((charges, date) => {
+        ny_charges_by_borough.push({
+            Borough: borough,
+            "Revenue Month": date, 
+            Charges: charges
+        });
+    });
+  });
+
+  ny_consumption_by_borough.sort((d1,d2) => d1["Revenue Month"] - d2["Revenue Month"])
+  ny_charges_by_borough.sort((d1,d2) => d1["Revenue Month"] - d2["Revenue Month"])
+
+  console.log(ny_charges_by_borough)
+
+  // lineChart(ny_consumption_by_borough, "Revenue Month", "Consumption", "Borough", "LineChart1")
+  // lineChart(ny_charges_by_borough, "Revenue Month", "Charges", "Borough", "LineChart2")
+
+  // #endregion
+
 });

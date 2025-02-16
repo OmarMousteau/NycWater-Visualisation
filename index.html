@@ -7,21 +7,36 @@
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.5.0/nouislider.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.5.0/nouislider.min.js"></script>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <h1 style="text-align: center;">Water consumption and prices in New York City</h1>
-    <div id="slider-container">
-        <div id="date-slider"></div>
-        <p id="date-display"></p>
+    <div id="controls-container">
+        <div id="slider-container">
+            <div id="date-slider"></div>
+            <p id="date-display"></p>
+        </div>
+        <div id="selection-container">
+            <label for="consumption-select">Volume unit :</label>
+            <select id="consumption-select">
+                <option value="Consumption (HCF)">HCF</option>
+                <option value="Consumption (m3)">m3</option>
+            </select>
+        </div>
     </div>
-    <div id="selection-container" style="text-align: center;">
-        <label for="consumption-select">Volume unit :</label>
-        <select id="consumption-select">
-            <option value="Consumption (HCF)">HCF</option>
-            <option value="Consumption (m3)">m3</option>
-        </select>
+    
+    <div class="container-flex">
+        <div id="NYCMap"></div>
+        <div class="side-vizs">
+            <div class="scorecard" id="water-consumption">💧 Comsumption : 0 m³</div>
+            <div class="scorecard" id="total-price">💰 Total Charges : $0</div>
+            <div class="scorecard" id="price-per-unit">📏 Price/m³ : $0</div>
+            <div class="scorecard" id="other-charges">📌 Other charges : $0</div>
+            <div id="LineChart1"></div>
+            <div id="LineChart2"></div>
+        </div>
     </div>
-    <div id="bar-chart"></div>
+    
     <script src="app.js"></script>
 </body>
 </html>
