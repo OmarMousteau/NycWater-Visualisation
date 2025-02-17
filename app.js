@@ -193,6 +193,14 @@ d3.csv("NY.csv").then(ny_raw => {
     const svgLineChart = d3.select(`#${div_id}`).append("svg")
       .attr("viewBox", [0, 0, width, height]);
 
+    //We filter oulliers
+    
+    let threshold = d3.quantile(dataset.map(d => d[y_value]), 0.9999);
+    console.log('threshold :',threshold);
+
+    let data = dataset.filter(d => d[y_value] <= threshold)
+    console.log('data :',data);
+
     const scaleX = d3.scaleUtc()
       //.domain([d3.max(data, d => d[x_value]), d3.max(data, d => d[x_value])])
       .domain(d3.extent(data, d => d[x_value]))
