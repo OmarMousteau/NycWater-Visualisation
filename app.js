@@ -60,6 +60,7 @@ d3.csv("NY.csv").then(ny_raw => {
     console.log('timeframe :',minDateValue, maxDateValue);
     console.log('ny filtered length :',ny_filtered.length);
     updateScorecards();
+    updateLineCharts();
   }
 
   // Call filterData whenever the slider values change
@@ -79,6 +80,7 @@ d3.csv("NY.csv").then(ny_raw => {
     console.log(`Selected consumption unit: ${consumption}`);
     volume_unit = (consumptionSelect.value == "Consumption (m3)") ? "m3" : "HCF";
     updateScorecards();
+    updateLineCharts();
   });
 
   // #endregion
@@ -177,14 +179,16 @@ d3.csv("NY.csv").then(ny_raw => {
 
     const legendRectWidth = 10
     const legendRectHeight = 10
-    const legendXPosition = margin.left +100
+    const legendXPosition = width - margin.right - 100
     const legendVerticalPadding = 10
     const legendHorizontalPadding = 15
     const yAxisTextVerticalPadding = 45
-    const xAxisTextVerticalPadding = 10
-    const axisTextHorizontalPadding = 35
+    const xAxisTextVerticalPadding = 50
+    const axisTextHorizontalPadding = 0
 
     const color = d3.scaleOrdinal(d3.schemeCategory10)
+
+    d3.select(`#${div_id}`).select("svg").remove();
 
     const svgLineChart = d3.select(`#${div_id}`).append("svg")
       .attr("viewBox", [0, 0, width, height]);
@@ -241,7 +245,7 @@ d3.csv("NY.csv").then(ny_raw => {
     });
 
     svgLineChart.append("text")
-      .attr("x", margin.left)
+      .attr("x", xAxisTextVerticalPadding)
       .attr("y", margin.top + yAxisTextVerticalPadding)
       .attr("transform", `rotate(-90, ${margin.left - axisTextHorizontalPadding}, ${margin.top + yAxisTextVerticalPadding})`)
       .text(y_value)
@@ -250,7 +254,7 @@ d3.csv("NY.csv").then(ny_raw => {
 
     svgLineChart.append("text")
       .attr("x", width - margin.right - axisTextHorizontalPadding)
-      .attr("y", height - margin.bottom - xAxisTextVerticalPadding)
+      .attr("y", height)
       .text(x_value)
       .attr("text-anchor", "end")
       .style("font-size", "13px");
@@ -284,50 +288,54 @@ d3.csv("NY.csv").then(ny_raw => {
       .text(d => d)
       .attr("text-anchor", "end");
   }
+
+  updateLineCharts();
+
+  function updateLineCharts() {
+
+    let ny_consumption_by_borough_map = [...d3.rollup(ny_filtered,  
+      v => d3.sum(v, v => v[consumptionSelect.value]),
+      d => d["Borough"],
+      d => d["Revenue Month"])]
   
-
-  let ny_consumption_by_borough_map = [...d3.rollup(ny_filtered,  
-    v => d3.sum(v, v => v[consumptionSelect.value]),
-    d => d["Borough"],
-    d => d["Revenue Month"])]
-
-  let ny_consumption_by_borough = [];
-
-  ny_consumption_by_borough_map.forEach(([borough, dataMap]) => {
-    dataMap.forEach((consumption, date) => {
-        ny_consumption_by_borough.push({
-            Borough: borough,
-            "Revenue Month": date, 
-            Consumption: consumption
-        });
+    let ny_consumption_by_borough = [];
+  
+    ny_consumption_by_borough_map.forEach(([borough, dataMap]) => {
+      dataMap.forEach((consumption, date) => {
+          ny_consumption_by_borough.push({
+              Borough: borough,
+              "Revenue Month": date, 
+              Consumption: consumption
+          });
+      });
     });
-  });
-
-  let ny_charges_by_borough_map = [...d3.rollup(ny_filtered,  
-    v => d3.sum(v, v => v["Water&Sewer Charges"]),
-    d => d["Borough"],
-    d => d["Revenue Month"])]
-
-  let ny_charges_by_borough = [];
-
-  ny_charges_by_borough_map.forEach(([borough, dataMap]) => {
-    dataMap.forEach((charges, date) => {
-        ny_charges_by_borough.push({
-            Borough: borough,
-            "Revenue Month": date, 
-            Charges: charges
-        });
+  
+    let ny_charges_by_borough_map = [...d3.rollup(ny_filtered,  
+      v => d3.sum(v, v => v["Water&Sewer Charges"]),
+      d => d["Borough"],
+      d => d["Revenue Month"])]
+  
+    let ny_charges_by_borough = [];
+  
+    ny_charges_by_borough_map.forEach(([borough, dataMap]) => {
+      dataMap.forEach((charges, date) => {
+          ny_charges_by_borough.push({
+              Borough: borough,
+              "Revenue Month": date, 
+              Charges: charges
+          });
+      });
     });
-  });
+  
+    ny_consumption_by_borough.sort((d1,d2) => d1["Revenue Month"] - d2["Revenue Month"])
+    ny_charges_by_borough.sort((d1,d2) => d1["Revenue Month"] - d2["Revenue Month"])
+  
+    console.log(ny_charges_by_borough)
+    
+    lineChart(ny_consumption_by_borough, "Revenue Month", "Consumption", "Borough", "LineChart1");
+    lineChart(ny_charges_by_borough, "Revenue Month", "Charges", "Borough", "LineChart2");
+    }
 
-  ny_consumption_by_borough.sort((d1,d2) => d1["Revenue Month"] - d2["Revenue Month"])
-  ny_charges_by_borough.sort((d1,d2) => d1["Revenue Month"] - d2["Revenue Month"])
 
-  console.log(ny_charges_by_borough)
-
-  // lineChart(ny_consumption_by_borough, "Revenue Month", "Consumption", "Borough", "LineChart1")
-  // lineChart(ny_charges_by_borough, "Revenue Month", "Charges", "Borough", "LineChart2")
-
-  // #endregion
-
+  // //#endregion
 });
