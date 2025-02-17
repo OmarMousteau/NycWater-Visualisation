@@ -144,7 +144,16 @@ d3.csv("NY.csv").then(ny_raw => {
             d3.select(this).attr("data-selected", isSelected ? "false" : "true")
                           .style("fill", isSelected ? "gray" : "#0b4b91");
             console.log("Boroughs selected:", BoroughsSelected);
+            // updateBoroughs();
         });
+
+      // function updateBoroughs() {
+      //   ny_filtered = ny_filtered.filter(d => BoroughsSelected.includes(d["Borough"]));
+      //   console.log('BoroughsSelected :',BoroughsSelected);
+      //   console.log('ny filtered lengthhhh :',ny_filtered.length);
+      //   updateScorecards();
+      //   updateLineCharts();
+      // };
 }
 
   // #endregion
@@ -171,7 +180,7 @@ d3.csv("NY.csv").then(ny_raw => {
 
   // #region LineChart
 
-  function lineChart (data, x_value, y_value, color_value, div_id)
+  function lineChart (dataset, x_value, y_value, color_value, div_id)
   {
     const width = 1200;
     const height = 400;
@@ -183,7 +192,7 @@ d3.csv("NY.csv").then(ny_raw => {
     const legendVerticalPadding = 10
     const legendHorizontalPadding = 15
     const yAxisTextVerticalPadding = 45
-    const xAxisTextVerticalPadding = 50
+    const xAxisTextVerticalPadding = 20
     const axisTextHorizontalPadding = 0
 
     const color = d3.scaleOrdinal(d3.schemeCategory10)
@@ -253,8 +262,8 @@ d3.csv("NY.csv").then(ny_raw => {
     });
 
     svgLineChart.append("text")
-      .attr("x", xAxisTextVerticalPadding)
-      .attr("y", margin.top + yAxisTextVerticalPadding)
+      .attr("x", 100)
+      .attr("y", margin.top + yAxisTextVerticalPadding + xAxisTextVerticalPadding)
       .attr("transform", `rotate(-90, ${margin.left - axisTextHorizontalPadding}, ${margin.top + yAxisTextVerticalPadding})`)
       .text(y_value)
       .attr("text-anchor", "end")
@@ -345,5 +354,5 @@ d3.csv("NY.csv").then(ny_raw => {
     }
 
 
-  // //#endregion
+  //#endregion
 });
