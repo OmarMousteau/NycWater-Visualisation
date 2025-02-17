@@ -13,6 +13,8 @@ d3.csv("NY.csv").then(ny_raw => {
     r["Water&Sewer Charges"] = +d["Water&Sewer Charges"];
     r["Other Charges"] = +d["Other Charges"];
     r["Current Charges"] = +d["Current Charges"];
+    r["Price/HCF"] = r["Water&Sewer Charges"] / r["Consumption (HCF)"];
+    r["Price/m3"] = r["Water&Sewer Charges"] / r["Consumption (m3)"];
     return r
   })
 
@@ -345,6 +347,23 @@ d3.csv("NY.csv").then(ny_raw => {
           });
       });
     });
+
+    let ny_pricevolume_by_borough_map = [...d3.rollup(ny_filtered,  
+      v => d3.sum(v, v => v["Price/HCF"]),
+      d => d["Borough"],
+      d => d["Revenue Month"])]
+  
+    let ny_pricevolume_by_borough = [];
+  
+    ny_pricevolume_by_borough_map.forEach(([borough, dataMap]) => {
+      dataMap.forEach((pricevolume, date) => {
+          ny_pricevolume_by_borough.push({
+              Borough: borough,
+              "Revenue Month": date, 
+              PriceVolume: pricevolume
+          });
+      });
+    });
   
     ny_consumption_by_borough.sort((d1,d2) => d1["Revenue Month"] - d2["Revenue Month"])
     ny_charges_by_borough.sort((d1,d2) => d1["Revenue Month"] - d2["Revenue Month"])
@@ -353,6 +372,10 @@ d3.csv("NY.csv").then(ny_raw => {
     
     lineChart(ny_consumption_by_borough, "Revenue Month", "Consumption", "Borough", "LineChart1");
     lineChart(ny_charges_by_borough, "Revenue Month", "Charges", "Borough", "LineChart2");
+
+
+    console.log('ny_pricevolume_by_borough_map :',ny_pricevolume_by_borough_map);
+    lineChart(ny_pricevolume_by_borough_map, "Revenue Month", "Price/HCF", "Borough", "areachart-container");
     }
 
 
