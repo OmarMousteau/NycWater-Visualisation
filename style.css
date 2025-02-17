@@ -76,3 +76,19 @@ svg {
     font-size: 1.2em;
     font-weight: bold;
 }
+
+.container-flex2 {
+    display: flex; /* Active Flexbox */
+    justify-content: space-between; /* Espacement équilibré */
+    gap: 20px; /* Ajoute un espace entre les divs (optionnel) */
+}
+
+#areachart-container {
+    flex: 1; /* Les divs prennent une largeur égale */
+    min-width: 0; /* Empêche le débordement */
+}
+
+#treemap-container {
+    flex: 2;
+    min-width: 0;
+}

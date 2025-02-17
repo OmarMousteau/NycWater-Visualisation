@@ -61,6 +61,7 @@ d3.csv("NY.csv").then(ny_raw => {
     console.log('ny filtered length :',ny_filtered.length);
     updateScorecards();
     updateLineCharts();
+    treemap();
   }
 
   // Call filterData whenever the slider values change
@@ -81,6 +82,7 @@ d3.csv("NY.csv").then(ny_raw => {
     volume_unit = (consumptionSelect.value == "Consumption (m3)") ? "m3" : "HCF";
     updateScorecards();
     updateLineCharts();
+    treemap();
   });
 
   // #endregion
@@ -355,4 +357,147 @@ d3.csv("NY.csv").then(ny_raw => {
 
 
   //#endregion
+
+  // #region TreeMap
+
+  function treemap () 
+  {
+    const w = 800;
+    const h = 400;
+
+    const data_tree = { name: "Root", children: [] };
+    const boroughColors = d3.scaleOrdinal(d3.schemeCategory10);
+  
+    {
+      function addToHierarchy(borough, location, value) {
+        let boroughNode = data_tree.children.find((b) => b.name === borough);
+        if (!boroughNode) {
+          boroughNode = { name: borough, children: [], borough: borough };
+          data_tree.children.push(boroughNode);
+        }
+  
+        let locationNode = boroughNode.children.find((l) => l.name === location);
+        if (!locationNode) {
+          locationNode = { name: location, value: 0, borough: borough };
+          boroughNode.children.push(locationNode);
+        }
+  
+        locationNode.value += value;
+      }
+  
+      ny_filtered.forEach((d) => {
+        addToHierarchy(d["Borough"], d["Location"], d["Water&Sewer Charges"]);
+      });
+    }
+  
+    const root = d3
+      .hierarchy(data_tree)
+      .sum((d) => d.value)
+      .sort((a, b) => b.value - a.value);
+  
+    const treemap = d3.treemap().size([w, h]).paddingInner(2).paddingOuter(5);
+  
+    const treemap_data = treemap(root);
+
+    d3.select(`#treemap-container`).select("svg").remove();
+
+    const svg = d3.select(`#treemap-container`).append("svg")
+      .attr("viewBox", [0, 0, w, h]);
+
+    // Ajouter un div pour les tooltips (initialement caché)
+  const tooltip = d3.select("body").append("div")
+  .attr("class", "tooltip")
+  .style("position", "absolute")
+  .style("background", "rgba(0, 0, 0, 0.8)")
+  .style("color", "white")
+  .style("padding", "8px")
+  .style("border-radius", "4px")
+  .style("visibility", "hidden")
+  .style("font-size", "12px");
+
+// Dessiner les rectangles des Boroughs avec une bordure noire
+svg
+  .selectAll(".borough")
+  .data(treemap_data.children) // Sélectionne uniquement les Boroughs
+  .enter()
+  .append("rect")
+  .attr("class", "borough")
+  .attr("x", (d) => d.x0)
+  .attr("y", (d) => d.y0)
+  .attr("width", (d) => d.x1 - d.x0)
+  .attr("height", (d) => d.y1 - d.y0)
+  .attr("stroke", "black") // Bordure noire pour les Boroughs
+  .attr("stroke-width", 3)
+  .attr("fill", (d) => boroughColors(d.data.name));
+
+// Dessiner les rectangles des Locations avec une bordure blanche et mise en surbrillance
+svg
+  .selectAll(".location")
+  .data(treemap_data.leaves()) 
+  .enter()
+  .append("rect")
+  .attr("class", "location")
+  .attr("x", (d) => d.x0)
+  .attr("y", (d) => d.y0)
+  .attr("width", (d) => d.x1 - d.x0)
+  .attr("height", (d) => d.y1 - d.y0)
+  .attr("stroke", "white") // Bordure blanche pour les Locations
+  .attr("stroke-width", 2)
+  .attr("fill", (d) => boroughColors(d.parent.data.name)) // Même couleur que le Borough
+  .on("mouseover", function(event, d) { // Afficher le tooltip et surbrillance
+    tooltip.style("visibility", "visible")
+      .html(`<strong>Borough :</strong> ${d.parent.data.name} <br>
+             <strong>Rue :</strong> ${d.data.name} <br>
+             <strong>Charges :</strong> $${d.value.toFixed(2)}`)
+      .style("left", `${event.pageX + 10}px`)
+      .style("top", `${event.pageY + 10}px`);
+    
+    d3.select(this)
+      .attr("stroke", "white") // Bordure noire au survol
+      .attr("stroke-width", 3)
+      .attr("fill", d3.color(boroughColors(d.parent.data.name)).darker(0.8)); // Assombrir la couleur au survol
+  })
+  .on("mousemove", function(event) { // Suivre la souris
+    tooltip.style("left", `${event.pageX + 10}px`)
+      .style("top", `${event.pageY + 10}px`);
+  })
+  .on("mouseout", function(d) { // Cacher le tooltip et enlever la surbrillance
+    tooltip.style("visibility", "hidden");
+
+    d3.select(this)
+      .attr("stroke", "white") // Remet la bordure blanche
+      .attr("stroke-width", 2)
+      .attr("fill", boroughColors(d3.select(this).datum().parent.data.name)); // Rétablir la couleur normale
+  });
+
+// Ajouter les labels pour les Locations en évitant les débordements
+const labels = svg
+  .selectAll(".location-label")
+  .data(treemap_data.leaves()) 
+  .enter()
+  .append("text")
+  .attr("class", "location-label")
+  .attr("x", (d) => d.x0 + 5)
+  .attr("y", (d) => d.y0 + 15)
+  .attr("fill", "white")
+  .attr("font-size", "12px")
+  .attr("font-weight", "bold")
+  .text((d) => d.data.name);
+
+// Vérifier si le texte dépasse sa case et le masquer si nécessaire
+labels.each(function (d) {
+  const textElement = d3.select(this);
+  const bbox = textElement.node().getBBox();
+  const boxWidth = d.x1 - d.x0;
+  const boxHeight = d.y1 - d.y0;
+
+  if (bbox.width > boxWidth - 30 || bbox.height > boxHeight - 30) {
+    textElement.remove(); // Supprime le texte si trop grand
+  }
+});
+  };
+
+  treemap();
+  
+  // #endregion
 });
