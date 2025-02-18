@@ -13,8 +13,8 @@ d3.csv("NY.csv").then(ny_raw => {
     r["Water&Sewer Charges"] = +d["Water&Sewer Charges"];
     r["Other Charges"] = +d["Other Charges"];
     r["Current Charges"] = +d["Current Charges"];
-    r["Price/HCF"] = r["Water&Sewer Charges"] / r["Consumption (HCF)"];
-    r["Price/m3"] = r["Water&Sewer Charges"] / r["Consumption (m3)"];
+    r["Price/HCF"] = r["Consumption (HCF)"]!=0 ? r["Water&Sewer Charges"] / r["Consumption (HCF)"] : 0;
+    r["Price/m3"] = r["Consumption (m3)"] !=0 ? r["Water&Sewer Charges"] / r["Consumption (m3)"] : 0;
     return r
   })
 
@@ -168,12 +168,10 @@ d3.csv("NY.csv").then(ny_raw => {
     let total_consumption = d3.sum(ny_filtered, d => d[consumptionSelect.value]);
     let total_waterCharges = d3.sum(ny_filtered, d => d["Water&Sewer Charges"]);
     let pricePerUnit = total_waterCharges/total_consumption;
-    let otherCharges = d3.sum(ny_filtered, d => d["Other Charges"]);
     
-    document.getElementById("water-consumption").innerHTML = `💧 Consumption : ${total_consumption.toFixed(0)} ${volume_unit}`;
-    document.getElementById("total-price").innerHTML = `💰 Total Charges : $${total_waterCharges.toFixed(2)}`;
-    document.getElementById("price-per-unit").innerHTML = `📏 Price/${volume_unit} : $${pricePerUnit.toFixed(2)}`;
-    document.getElementById("other-charges").innerHTML = `📌 Other charges : $${otherCharges.toFixed(2)}`;
+    document.getElementById("water-consumption").innerHTML = `💧 Consumption \n ${total_consumption.toFixed(0)} ${volume_unit}`;
+    document.getElementById("total-price").innerHTML = `💰 Total Charges \n $${total_waterCharges.toFixed(2)}`;
+    document.getElementById("price-per-unit").innerHTML = `📏 Price/${volume_unit} \n $${pricePerUnit.toFixed(2)}`;
 
     console.log('total_consumption :',total_consumption);
   }
@@ -184,10 +182,8 @@ d3.csv("NY.csv").then(ny_raw => {
 
   // #region LineChart
 
-  function lineChart (dataset, x_value, y_value, color_value, div_id)
+  function lineChart (dataset, x_value, y_value, color_value, div_id, width, height)
   {
-    const width = 1200;
-    const height = 400;
     const margin = { top: 20, right: 30, bottom: 30, left: 50 };
 
     const legendRectWidth = 10
@@ -367,15 +363,16 @@ d3.csv("NY.csv").then(ny_raw => {
   
     ny_consumption_by_borough.sort((d1,d2) => d1["Revenue Month"] - d2["Revenue Month"])
     ny_charges_by_borough.sort((d1,d2) => d1["Revenue Month"] - d2["Revenue Month"])
+    ny_pricevolume_by_borough.sort((d1,d2) => d1["Revenue Month"] - d2["Revenue Month"]) 
   
     console.log(ny_charges_by_borough)
     
-    lineChart(ny_consumption_by_borough, "Revenue Month", "Consumption", "Borough", "LineChart1");
-    lineChart(ny_charges_by_borough, "Revenue Month", "Charges", "Borough", "LineChart2");
+    lineChart(ny_consumption_by_borough, "Revenue Month", "Consumption", "Borough", "LineChart1", 1200, 400);
+    lineChart(ny_charges_by_borough, "Revenue Month", "Charges", "Borough", "LineChart2", 1200, 400);
 
 
-    console.log('ny_pricevolume_by_borough_map :',ny_pricevolume_by_borough_map);
-    lineChart(ny_pricevolume_by_borough_map, "Revenue Month", "Price/HCF", "Borough", "areachart-container");
+    console.log('ny_pricevolume_by_borough :',ny_pricevolume_by_borough);
+    lineChart(ny_pricevolume_by_borough, "Revenue Month", "PriceVolume", "Borough", "areachart-container", 1200, 600);
     }
 
 
