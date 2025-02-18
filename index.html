@@ -11,6 +11,10 @@
 </head>
 <body>
     <h1 style="text-align: center;">Water consumption and prices in New York City</h1>
+    <p style="text-align: center;">Ce projet permet d'explorer les données fournis par la municipalité de new york sur la consommation et les charges mensuelles liées à l'eau entre 2013 et 2023. Il est réalisé dans le cadre du cours "Visualisation interactive de données" à l'École Centrale de Lyon, supervisé par M. Romain Vuillemot.</p>
+    <p style="text-align: center;">
+        <a href="Prototype.jpg" target="_blank">Voir le prototype</a>
+    </p>
     <div id="controls-container">
         <div id="slider-container">
             <div id="date-slider"></div>
@@ -28,10 +32,11 @@
     <div class="container-flex">
         <div id="NYCMap"></div>
         <div class="side-vizs">
-            <div class="scorecard" id="water-consumption">💧 Comsumption : 0 m³</div>
-            <div class="scorecard" id="total-price">💰 Total Charges : $0</div>
-            <div class="scorecard" id="price-per-unit">📏 Price/m³ : $0</div>
-            <div class="scorecard" id="other-charges">📌 Other charges : $0</div>
+            <div id="scorecards">
+                <div class="scorecard" id="water-consumption">💧 Comsumption \n 0 m³</div>
+                <div class="scorecard" id="total-price">💰 Total Charges \n $0</div>
+                <div class="scorecard" id="price-per-unit">📏 Price/m³ \n $0</div>   
+            </div>
             <div id="LineChart1"></div>
             <div id="LineChart2"></div>
         </div>
@@ -40,11 +45,6 @@
     <div class="container-flex2">
         <div id="areachart-container"></div>
         <div id="treemap-container"></div>
-    </div>
-
-    <div style="text-align: center; padding-top: 50px;">
-        Prototype :
-        <img src="Prototype.jpg" width="500" style="text-align: center;">
     </div>
     
     <script src="app.js" ></script>
