@@ -397,7 +397,7 @@ d3.csv("NY.csv").then(ny_raw => {
   document.querySelectorAll('.MetricChoice input[name="option"]').forEach(radio => {
     radio.addEventListener('change', function() {
       metric = this.value;
-      metric_column = (metric == "Volume") ? consumptionSelect.value : "Water&Sewer Charges";
+      metric_column = (metric == "Consumption") ? consumptionSelect.value : "Water&Sewer Charges";
       treemap();
     });
   });
