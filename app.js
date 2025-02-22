@@ -16,7 +16,7 @@ d3.csv("NY.csv").then(ny_raw => {
     r["Price/HCF"] = r["Consumption (HCF)"]!=0 ? r["Water&Sewer Charges"] / r["Consumption (HCF)"] : 0;
     r["Price/m3"] = r["Consumption (m3)"] !=0 ? r["Water&Sewer Charges"] / r["Consumption (m3)"] : 0;
     return r
-  })
+  }).filter(d => d["Borough"] !== "FHA" && d["Borough"] !== "NON DEVELOPMENT FACILITY");
 
   const nyc_boroughs = new Set(ny.map(d => d["Borough"]))
 
@@ -28,6 +28,8 @@ d3.csv("NY.csv").then(ny_raw => {
   const maxDate = d3.max(ny, d => d["Revenue Month"]);
 
   let ny_filtered = ny.slice();
+
+  const BoroughsSelected = nyc_boroughs;
 
   const dateSlider = document.getElementById('date-slider');
 
@@ -58,7 +60,7 @@ d3.csv("NY.csv").then(ny_raw => {
     const minDateValue = new Date(+sliderValues[0]);
     const maxDateValue = new Date(+sliderValues[1]);
 
-    ny_filtered = ny.filter(d => d["Revenue Month"] >= minDateValue && d["Revenue Month"] <= maxDateValue);
+    ny_filtered = ny.filter(d => d["Revenue Month"] >= minDateValue && d["Revenue Month"] <= maxDateValue && BoroughsSelected.has(d["Borough"]));
     console.log('timeframe :',minDateValue, maxDateValue);
     console.log('ny filtered length :',ny_filtered.length);
     updateScorecards();
@@ -96,7 +98,6 @@ d3.csv("NY.csv").then(ny_raw => {
   });
 
   function drawMap(Boroughs) {
-    let BoroughsSelected = [];
     
     const width = 800; 
     const height = 675;
@@ -123,8 +124,8 @@ d3.csv("NY.csv").then(ny_raw => {
         .join("path")
         .attr("d", path)
         .style("stroke", "white")
-        .style("fill", "grey")
-        .attr("data-selected", "false")
+        .style("fill", "#0b4b91")
+        .attr("data-selected", "true")
         .on('mouseover', function(e, d) {
             tooltip.style("visibility", "visible");
             tooltip.text("Borough : " + d.properties.name);
@@ -141,23 +142,23 @@ d3.csv("NY.csv").then(ny_raw => {
         .on("click", function(e, d) {
             let isSelected = d3.select(this).attr("data-selected") === "true";
             if (isSelected) {
-                BoroughsSelected = BoroughsSelected.filter(name => name !== d.properties.name);
+              BoroughsSelected.delete(d.properties.name);
             } else {
-                BoroughsSelected.push(d.properties.name);
+              BoroughsSelected.add(d.properties.name);
             }
             d3.select(this).attr("data-selected", isSelected ? "false" : "true")
                           .style("fill", isSelected ? "gray" : "#0b4b91");
             console.log("Boroughs selected:", BoroughsSelected);
-            // updateBoroughs();
+            updateBoroughs();
         });
 
-      // function updateBoroughs() {
-      //   ny_filtered = ny_filtered.filter(d => BoroughsSelected.includes(d["Borough"]));
-      //   console.log('BoroughsSelected :',BoroughsSelected);
-      //   console.log('ny filtered lengthhhh :',ny_filtered.length);
-      //   updateScorecards();
-      //   updateLineCharts();
-      // };
+      function updateBoroughs() {
+        filterData();
+        console.log('BoroughsSelected :',BoroughsSelected);
+        console.log('ny filtered lengthhhh :',ny_filtered.length);
+        updateScorecards();
+        updateLineCharts();
+      };
 }
 
   // #endregion
