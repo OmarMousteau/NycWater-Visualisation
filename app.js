@@ -73,6 +73,10 @@ d3.csv("NY.csv").then(ny_raw => {
 
   // #endregion
 
+  const colorScale = d3.scaleOrdinal()
+    .domain([...new Set(ny_raw.map(d => d["Borough"]))])
+    .range(["#264653", "#2A9D8F", "#E9C46A", "#F4A261", "#E76F51", "#A8DADC", "#457B9D", "#1D3557"]);
+
   // #region Columt Unit Selection
 
   const consumptionSelect = document.getElementById('consumption-select');
@@ -111,7 +115,8 @@ d3.csv("NY.csv").then(ny_raw => {
         .attr("class", "svg-tooltip")
         .style("position", "absolute")
         .style("visibility", "hidden")
-        .style("background-color", "#9ec9e1")
+        .style("background", "rgba(0, 0, 0, 0.8)")
+        .style("color", "white")
         .style("border-radius", "2px")
         .style("padding", "0.5em");
 
@@ -119,12 +124,14 @@ d3.csv("NY.csv").then(ny_raw => {
 
     var path = d3.geoPath().projection(projection);
 
+    const color = colorScale;
+
     g.selectAll("path")
         .data(Boroughs.features)
         .join("path")
         .attr("d", path)
         .style("stroke", "white")
-        .style("fill", "#0b4b91")
+        .style("fill", d => color(d.properties.name))
         .attr("data-selected", "true")
         .on('mouseover', function(e, d) {
             tooltip.style("visibility", "visible");
@@ -154,7 +161,7 @@ d3.csv("NY.csv").then(ny_raw => {
               BoroughsSelected.add(d.properties.name);
             }
             d3.select(this).attr("data-selected", isSelected ? "false" : "true")
-                          .style("fill", isSelected ? "gray" : "#0b4b91");
+                          .style("fill", isSelected ? "gray" : color(d.properties.name));
             console.log("Boroughs selected:", BoroughsSelected);
             updateBoroughs();
         });
@@ -180,8 +187,6 @@ d3.csv("NY.csv").then(ny_raw => {
     document.getElementById("water-consumption").innerHTML = `💧 Consumption <br> ${total_consumption.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",")} ${volume_unit}`;
     document.getElementById("total-price").innerHTML = `💰 Total Charges <br> $${total_waterCharges.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
     document.getElementById("price-per-unit").innerHTML = `📏 Price/${volume_unit} <br> $${pricePerUnit.toFixed(2)}`;
-
-    console.log('total_consumption :',total_consumption);
   }
 
   updateScorecards();
@@ -203,7 +208,7 @@ d3.csv("NY.csv").then(ny_raw => {
     const xAxisTextVerticalPadding = 20
     const axisTextHorizontalPadding = 0
 
-    const color = d3.scaleOrdinal(d3.schemeCategory10)
+    const color = colorScale;
 
     d3.select(`#${div_id}`).select("svg").remove();
 
@@ -363,8 +368,10 @@ d3.csv("NY.csv").then(ny_raw => {
     const w = 800;
     const h = 400;
 
+
+
     const data_tree = { name: "Root", children: [] };
-    const boroughColors = d3.scaleOrdinal(d3.schemeCategory10);
+    const boroughColors = colorScale;
   
     {
       function addToHierarchy(borough, location, value) {
@@ -555,7 +562,7 @@ labels.each(function (d) {
     // Définir les couleurs pour chaque métrique
     const color = d3.scaleOrdinal()
         .domain(subgroups)
-        .range(["#1f77b4", "#ff7f0e"]); // Bleu pour consommation, orange pour prix/m³
+        .range(["#1B263B", "#A67C52"]); // Bleu pour consommation, orange pour prix/m³
 
     d3.select(`#${div_id}`).select("svg").remove();
   
@@ -663,31 +670,33 @@ labels.each(function (d) {
       .selectAll("g")
       .data(formattedData)
       .join("g")
-        .attr("transform", d => `translate(${x(d.borough)},0)`)
+      .attr("transform", d => `translate(${x(d.borough)},0)`)
       .selectAll("rect")
       .data(d => [
-          { key: "totalConsumption", value: d.totalConsumption, yScale: yLeft },
-          { key: "avgPricePerVolume", value: d.avgPricePerVolume, yScale: yRight }
+        { key: "totalConsumption", value: d.totalConsumption, yScale: yLeft },
+        { key: "avgPricePerVolume", value: d.avgPricePerVolume, yScale: yRight }
       ])
       .join("rect")
-        .attr("x", d => xSubgroup(d.key))
-        .attr("y", d => d.yScale(d.value))
-        .attr("height", d => d.yScale(0) - d.yScale(d.value))
-        .attr("width", xSubgroup.bandwidth())
-        .attr("fill", d => color(d.key))
-        .on("mouseover", function(event, d) {
-          tooltip.style("visibility", "visible")
-            .html(`${d.key === "totalConsumption" ? "Consommation (HCF)" : "Prix/m³"}: ${d.value.toFixed(2)}`);
-          d3.select(this).attr("stroke", "black").attr("stroke-width", 2);
-        })
-        .on("mousemove", function(event) {
-          tooltip.style("left", `${event.pageX + 10}px`)
-            .style("top", `${event.pageY + 10}px`);
-        })
-        .on("mouseout", function() {
-          tooltip.style("visibility", "hidden");
-          d3.select(this).attr("stroke", "none");
-        });
+      .attr("x", d => xSubgroup(d.key))
+      .attr("y", d => d.yScale(d.value))
+      .attr("height", d => d.yScale(0) - d.yScale(d.value))
+      .attr("width", xSubgroup.bandwidth())
+      .attr("fill", d => color(d.key))
+      .on("mouseover", function(event, d) {
+        tooltip.style("visibility", "visible")
+        .html(`${d.key === "totalConsumption" ? "Consommation (HCF)" : "Prix/m³"}: ${d.value.toFixed(2)}`);
+        d3.select(this).attr("stroke", "black").attr("stroke-width", 2)
+        .attr("fill", d3.color(color(d.key)).darker(0.8));
+      })
+      .on("mousemove", function(event) {
+        tooltip.style("left", `${event.pageX + 10}px`)
+        .style("top", `${event.pageY + 10}px`);
+      })
+      .on("mouseout", function() {
+        tooltip.style("visibility", "hidden");
+        d3.select(this).attr("stroke", "none")
+        .attr("fill", color(d3.select(this).datum().key));
+      });
   }
   // #endregion
 
