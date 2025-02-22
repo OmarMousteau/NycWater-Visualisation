@@ -128,9 +128,14 @@ d3.csv("NY.csv").then(ny_raw => {
         .attr("data-selected", "true")
         .on('mouseover', function(e, d) {
             tooltip.style("visibility", "visible");
-            tooltip.html("<strong>Borough:</strong> " + d.properties.name + "<br>" +
-                 "<strong>Water Consumption:</strong> " + d3.sum(ny_filtered.filter(e => e["Borough"] === d.properties.name), d => d[consumptionSelect.value]).toFixed(0) + " " + volume_unit + "<br>" +
-                 "<strong>Water Charges:</strong> " + d3.sum(ny_filtered.filter(e => e["Borough"] === d.properties.name), d => d["Water&Sewer Charges"]).toFixed(2) + " $");
+
+            let isSelected = d3.select(this).attr("data-selected") === "true";
+            if (isSelected) {
+              tooltip.html("<strong>Borough:</strong> " + d.properties.name + "<br>" +
+                "<strong>Water Consumption:</strong> " + d3.sum(ny_filtered.filter(e => e["Borough"] === d.properties.name), d => d[consumptionSelect.value]).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",") + " " + volume_unit + "<br>" +
+                "<strong>Water Charges:</strong> " + d3.sum(ny_filtered.filter(e => e["Borough"] === d.properties.name), d => d["Water&Sewer Charges"]).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",") + " $"); 
+            }
+            else {tooltip.html("<strong>Borough:</strong> " + d.properties.name)}
             d3.select(this).style("stroke", "black").style("stroke-width", "2px");
         })
         .on('mousemove', function(e, d) {
@@ -172,9 +177,9 @@ d3.csv("NY.csv").then(ny_raw => {
     let total_waterCharges = d3.sum(ny_filtered, d => d["Water&Sewer Charges"]);
     let pricePerUnit = total_waterCharges/total_consumption;
     
-    document.getElementById("water-consumption").innerHTML = `💧 Consumption \n ${total_consumption.toFixed(0)} ${volume_unit}`;
-    document.getElementById("total-price").innerHTML = `💰 Total Charges \n $${total_waterCharges.toFixed(2)}`;
-    document.getElementById("price-per-unit").innerHTML = `📏 Price/${volume_unit} \n $${pricePerUnit.toFixed(2)}`;
+    document.getElementById("water-consumption").innerHTML = `💧 Consumption <br> ${total_consumption.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",")} ${volume_unit}`;
+    document.getElementById("total-price").innerHTML = `💰 Total Charges <br> $${total_waterCharges.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
+    document.getElementById("price-per-unit").innerHTML = `📏 Price/${volume_unit} <br> $${pricePerUnit.toFixed(2)}`;
 
     console.log('total_consumption :',total_consumption);
   }
@@ -309,6 +314,8 @@ d3.csv("NY.csv").then(ny_raw => {
       .attr("text-anchor", "end");
   }
 
+  //#endregion
+
   updateLineCharts();
 
   function updateLineCharts() {
@@ -380,9 +387,22 @@ d3.csv("NY.csv").then(ny_raw => {
     //barchart(1200, 600, ny_filtered, "LineChart2")
     }
 
+  // #region Columt Unit Selection
 
+  const metricSelect = document.getElementById('MetricChoice');
+  let metric = document.querySelector('input[name="option"]:checked').value;
 
-  //#endregion
+  metric_column = (metric == "Consumption") ? consumptionSelect.value : "Water&Sewer Charges";
+
+  document.querySelectorAll('.MetricChoice input[name="option"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+      metric = this.value;
+      metric_column = (metric == "Volume") ? consumptionSelect.value : "Water&Sewer Charges";
+      treemap();
+    });
+  });
+
+  // #endregion
 
   // #region TreeMap
 
@@ -412,7 +432,7 @@ d3.csv("NY.csv").then(ny_raw => {
       }
   
       ny_filtered.forEach((d) => {
-        addToHierarchy(d["Borough"], d["Location"], d["Water&Sewer Charges"]);
+        addToHierarchy(d["Borough"], d["Location"], d[metric_column]);
       });
     }
   
@@ -474,7 +494,7 @@ svg
     tooltip.style("visibility", "visible")
       .html(`<strong>Borough :</strong> ${d.parent.data.name} <br>
              <strong>Rue :</strong> ${d.data.name} <br>
-             <strong>Charges :</strong> $${d.value.toFixed(2)}`)
+             <strong>Charges :</strong> ${d.value.toFixed(2)} ${metric_column === "Water&Sewer Charges" ? "$" : volume_unit}`)
       .style("left", `${event.pageX + 10}px`)
       .style("top", `${event.pageY + 10}px`);
     
@@ -524,6 +544,7 @@ labels.each(function (d) {
   };
 
   treemap();
+  console.log('metric', metric_column);
   
   // #endregion
 
