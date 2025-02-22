@@ -11,10 +11,10 @@
 </head>
 <body>
     <h1 style="text-align: center;">Water consumption and prices in New York City</h1>
-    <p style="text-align: center;">Ce projet permet d'explorer les données fournis par la municipalité de new york sur la consommation et les charges mensuelles liées à l'eau entre 2013 et 2023. Il est réalisé dans le cadre du cours "Visualisation interactive de données" à l'École Centrale de Lyon, supervisé par M. Romain Vuillemot.</p>
+    <!-- <p style="text-align: center;">Ce projet permet d'explorer les données fournis par la municipalité de new york sur la consommation et les charges mensuelles liées à l'eau entre 2013 et 2023. Il est réalisé dans le cadre du cours "Visualisation interactive de données" à l'École Centrale de Lyon, supervisé par M. Romain Vuillemot.</p>
     <p style="text-align: center;">
         <a href="Prototype.jpg" target="_blank">Voir le prototype</a>
-    </p>
+    </p> -->
     <div id="controls-container">
         <div id="slider-container">
             <div id="date-slider"></div>
@@ -40,6 +40,12 @@
             <div id="LineChart1"></div>
             <div id="LineChart2"></div>
         </div>
+    </div>
+
+    <div class="MetricChoice">
+        <label><input type="radio" name="option" value="Volume"> Volume</label>
+        <label><input type="radio" name="option" value="Charges"> Charges</label>
+        <label><input type="radio" name="option" value="Price/Volume"> Price/Volume</label>
     </div>
 
     <div class="container-flex2">
