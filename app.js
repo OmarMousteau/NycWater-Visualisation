@@ -88,6 +88,7 @@ d3.csv("NY.csv").then(ny_raw => {
     consumption = this.value;
     console.log(`Selected consumption unit: ${consumption}`);
     volume_unit = (consumptionSelect.value == "Consumption (m3)") ? "m3" : "HCF";
+    update_metric_column();
     updateScorecards();
     updateLineCharts();
     treemap(800, 250);
@@ -251,7 +252,7 @@ d3.csv("NY.csv").then(ny_raw => {
       .style("fill", d => color(d[color_value]))
       .on("mouseover", function(event, d) {
         tooltip.style("visibility", "visible")
-          .html(`${x_value}: ${d3.timeFormat("%B %Y")(d[x_value])}<br>${y_value}: ${d[y_value].toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`);
+          .html(`${x_value}: ${d3.timeFormat("%B %Y")(d[x_value])}<br>${y_value}: ${d[y_value].toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")} ${metric_column === "Water&Sewer Charges" ? "$" : volume_unit}`);
         d3.select(this).attr("r", 8);
       })
       .on("mousemove", function(event) {
@@ -351,7 +352,10 @@ d3.csv("NY.csv").then(ny_raw => {
   const metricSelect = document.getElementById('MetricChoice');
   let metric = document.querySelector('input[name="option"]:checked').value;
 
-  metric_column = (metric == "Consumption") ? consumptionSelect.value : "Water&Sewer Charges";
+  function update_metric_column() {
+    metric_column = (document.querySelector('input[name="option"]:checked').value == "Consumption") ? consumptionSelect.value : "Water&Sewer Charges";
+  }
+  update_metric_column();
 
   document.querySelectorAll('.MetricChoice input[name="option"]').forEach(radio => {
     radio.addEventListener('change', function() {
@@ -686,7 +690,7 @@ labels.each(function (d) {
       .attr("fill", d => color(d.key))
       .on("mouseover", function(event, d) {
         tooltip.style("visibility", "visible")
-        .html(`${d.key === "totalConsumption" ? `Consumption (${volume_unit})` : "Charges ($)"}: ${d.value.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`);
+        .html(`${d.key === "totalConsumption" ? `Consumption` : "Charges"}: ${d.value.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",")} ${d.key === "totalConsumption" ? `${volume_unit}` : "$"}`);
         d3.select(this).attr("stroke", "black").attr("stroke-width", 2)
         .attr("fill", d3.color(color(d.key)).darker(0.8));
       })
