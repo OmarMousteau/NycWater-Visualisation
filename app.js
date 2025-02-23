@@ -548,9 +548,10 @@ labels.each(function (d) {
         .padding(0.2);
   
     const xSubgroup = d3.scaleBand()
-        .domain(subgroups)
-        .range([0, x.bandwidth()])
-        .padding(0.05);
+      .domain(subgroups)
+      .range([0, x.bandwidth()])
+      .paddingInner(0.1) // Ajuster la valeur pour contrôler l'espace entre les barres
+      .paddingOuter(0.3); // Ajuster la valeur pour contrôler l'espace entre les groupes de barres
   
     // Échelle Y pour la consommation
     const yLeft = d3.scaleLinear()
