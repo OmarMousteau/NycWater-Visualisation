@@ -251,7 +251,7 @@ d3.csv("NY.csv").then(ny_raw => {
       .style("fill", d => color(d[color_value]))
       .on("mouseover", function(event, d) {
         tooltip.style("visibility", "visible")
-          .html(`${x_value}: ${d3.timeFormat("%B %Y")(d[x_value])}<br>${y_value}: ${d[y_value].toFixed(2)}`);
+          .html(`${x_value}: ${d3.timeFormat("%B %Y")(d[x_value])}<br>${y_value}: ${d[y_value].toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`);
         d3.select(this).attr("r", 8);
       })
       .on("mousemove", function(event) {
@@ -453,7 +453,7 @@ svg
     tooltip.style("visibility", "visible")
       .html(`<strong>Borough :</strong> ${d.parent.data.name} <br>
              <strong>Rue :</strong> ${d.data.name} <br>
-             <strong>Charges :</strong> ${d.value.toFixed(2)} ${metric_column === "Water&Sewer Charges" ? "$" : volume_unit}`)
+             <strong>Charges :</strong> ${d.value.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",")} ${metric_column === "Water&Sewer Charges" ? "$" : volume_unit}`)
       .style("left", `${event.pageX + 10}px`)
       .style("top", `${event.pageY + 10}px`);
     
@@ -591,7 +591,7 @@ labels.each(function (d) {
         .attr("width", xSubgroup.bandwidth())
         .attr("fill", d => color(d.key))
       .append("title")
-        .text(d => `${d.key === "totalConsumption" ? `Consumption (${volume_unit})` : "Charges ($)"}: ${d.value.toFixed(2)}`);
+        .text(d => `${d.key === "totalConsumption" ? `Consumption (${volume_unit})` : "Charges ($)"}: ${d.value.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`);
   
     // Ajouter l'axe X
     svg.append("g")
@@ -684,7 +684,7 @@ labels.each(function (d) {
       .attr("fill", d => color(d.key))
       .on("mouseover", function(event, d) {
         tooltip.style("visibility", "visible")
-        .html(`${d.key === "totalConsumption" ? `Consumption (${volume_unit})` : "Charges ($)"}: ${d.value.toFixed(2)}`);
+        .html(`${d.key === "totalConsumption" ? `Consumption (${volume_unit})` : "Charges ($)"}: ${d.value.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`);
         d3.select(this).attr("stroke", "black").attr("stroke-width", 2)
         .attr("fill", d3.color(color(d.key)).darker(0.8));
       })
