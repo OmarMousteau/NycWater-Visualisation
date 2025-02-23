@@ -534,7 +534,7 @@ labels.each(function (d) {
     }));
   
     // Définir les groupes de valeurs
-    const subgroups = ["totalConsumption", "avgPricePerVolume"];
+    const subgroups = ["totalConsumption", "totalCharges"];
   
     // Définir les échelles
     const x = d3.scaleBand()
@@ -555,7 +555,7 @@ labels.each(function (d) {
   
     // Échelle Y pour le prix de l'eau au m³
     const yRight = d3.scaleLinear()
-        .domain([0, d3.max(formattedData, d => d.avgPricePerVolume)])
+        .domain([0, d3.max(formattedData, d => d.totalCharges)])
         .nice()
         .range([height - margin.bottom, margin.top]);
   
@@ -582,7 +582,7 @@ labels.each(function (d) {
       .selectAll("rect")
       .data(d => [
           { key: "totalConsumption", value: d.totalConsumption, yScale: yLeft },
-          { key: "avgPricePerVolume", value: d.avgPricePerVolume, yScale: yRight }
+          { key: "totalCharges", value: d.totalCharges, yScale: yRight }
       ])
       .join("rect")
         .attr("x", d => xSubgroup(d.key))
@@ -591,7 +591,7 @@ labels.each(function (d) {
         .attr("width", xSubgroup.bandwidth())
         .attr("fill", d => color(d.key))
       .append("title")
-        .text(d => `${d.key === "totalConsumption" ? "Consommation (HCF)" : "Prix/m³"}: ${d.value.toFixed(2)}`);
+        .text(d => `${d.key === "totalConsumption" ? `Consumption (${volume_unit})` : "Charges ($)"}: ${d.value.toFixed(2)}`);
   
     // Ajouter l'axe X
     svg.append("g")
@@ -611,7 +611,7 @@ labels.each(function (d) {
             .attr("y", 10)
             .attr("fill", "currentColor")
             .attr("text-anchor", "start")
-            .text("Consommation totale (HCF)"));
+            .text(`Consumption (${volume_unit})`));
   
     // Ajouter l'axe Y droit (Prix/m³)
     svg.append("g")
@@ -623,7 +623,7 @@ labels.each(function (d) {
             .attr("y", 10)
             .attr("fill", "currentColor")
             .attr("text-anchor", "start")
-            .text("Prix moyen de l'eau (USD/m³)"));
+            .text("Charges ($)"));
   
     // Ajouter une légende
     const legend = svg.append("g")
@@ -643,7 +643,7 @@ labels.each(function (d) {
         .attr("y", 12)
         .attr("fill", "currentColor")
         .style("font-size", "12px")
-        .text(d => d === "totalConsumption" ? "Consommation totale (HCF)" : "Prix moyen (USD/m³)");
+        .text(d => d === "totalConsumption" ? `Consumption (${volume_unit})` : "Charges ($)");
   
     // Ajouter un titre
     svg.append("text")
@@ -652,7 +652,7 @@ labels.each(function (d) {
         .attr("text-anchor", "middle")
         .attr("font-size", "16px")
         .attr("font-weight", "bold")
-        .text("Consommation d'eau vs Prix moyen par Borough");
+        .text("Water consumption vs charges per borough");
 
     // Ajouter un div pour les tooltips (initialement caché)
     const tooltip = d3.select("body").append("div")
@@ -674,7 +674,7 @@ labels.each(function (d) {
       .selectAll("rect")
       .data(d => [
         { key: "totalConsumption", value: d.totalConsumption, yScale: yLeft },
-        { key: "avgPricePerVolume", value: d.avgPricePerVolume, yScale: yRight }
+        { key: "totalCharges", value: d.totalCharges, yScale: yRight }
       ])
       .join("rect")
       .attr("x", d => xSubgroup(d.key))
@@ -684,7 +684,7 @@ labels.each(function (d) {
       .attr("fill", d => color(d.key))
       .on("mouseover", function(event, d) {
         tooltip.style("visibility", "visible")
-        .html(`${d.key === "totalConsumption" ? "Consommation (HCF)" : "Prix/m³"}: ${d.value.toFixed(2)}`);
+        .html(`${d.key === "totalConsumption" ? `Consumption (${volume_unit})` : "Charges ($)"}: ${d.value.toFixed(2)}`);
         d3.select(this).attr("stroke", "black").attr("stroke-width", 2)
         .attr("fill", d3.color(color(d.key)).darker(0.8));
       })
