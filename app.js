@@ -817,11 +817,13 @@ labels.each(function (d) {
     // Ajouter l'axe Y
     svg.append("g")
       .attr("transform", `translate(${margin.left},0)`)
-      .call(d3.axisLeft(y))
+      .call(d3.axisLeft(y).tickSizeOuter(0))
       .call(g => g.select(".domain").remove())
       .call(g => g.selectAll(".tick line")
       .clone().attr("x2", width - margin.left - margin.right)
       .attr("stroke-opacity", 0.05))
+      .call(g => g.selectAll(".tick text")
+      .style("font-size", "11px")) // Agrandir la police des valeurs graduées
       .call(g => g.append("text")
       .attr("x", 10)
       .attr("y", 10)
@@ -843,7 +845,9 @@ labels.each(function (d) {
     // Ajouter l'axe X
     svg.append("g")
       .attr("transform", `translate(0,${height - margin.bottom})`)
-      .call(d3.axisBottom(x).ticks(width / 80).tickSizeOuter(0));
+      .call(d3.axisBottom(x).ticks(width / 80).tickSizeOuter(0))
+      .call(g => g.selectAll(".tick text")
+      .style("font-size", "12px")); // Agrandir la police des valeurs graduées
 
     // Ajouter un titre
     svg.append("text")
