@@ -65,7 +65,7 @@ d3.csv("NY.csv").then(ny_raw => {
     console.log('ny filtered length :',ny_filtered.length);
     updateScorecards();
     updateLineCharts();
-    treemap();
+    treemap(800,250);
   }
 
   // Call filterData whenever the slider values change
@@ -77,7 +77,7 @@ d3.csv("NY.csv").then(ny_raw => {
     .domain([...new Set(ny_raw.map(d => d["Borough"]))])
     .range(["#264653", "#2A9D8F", "#E9C46A", "#F4A261", "#E76F51", "#A8DADC", "#457B9D", "#1D3557"]);
 
-  // #region Columt Unit Selection
+  // #region Column Unit Selection
 
   const consumptionSelect = document.getElementById('consumption-select');
   let consumption = consumptionSelect.value;
@@ -90,7 +90,7 @@ d3.csv("NY.csv").then(ny_raw => {
     volume_unit = (consumptionSelect.value == "Consumption (m3)") ? "m3" : "HCF";
     updateScorecards();
     updateLineCharts();
-    treemap();
+    treemap(800, 250);
   });
 
   // #endregion
@@ -103,8 +103,8 @@ d3.csv("NY.csv").then(ny_raw => {
 
   function drawMap(Boroughs) {
     
-    const width = 800; 
-    const height = 675;
+    const width = 475; 
+    const height = 400;
     
     let projection = d3.geoAlbersUsa().fitSize([width, height], Boroughs);
     
@@ -195,7 +195,7 @@ d3.csv("NY.csv").then(ny_raw => {
 
   // #region LineChart
 
-  function lineChart (dataset, x_value, y_value, color_value, div_id, width, height)
+  function lineChart (dataset, x_value, y_value, color_value, div_id, width, height, legend = true)
   {
     const margin = { top: 20, right: 30, bottom: 30, left: 50 };
 
@@ -287,7 +287,9 @@ d3.csv("NY.csv").then(ny_raw => {
 
     const colors_values = new Set(data.map(d => d[color_value]))
 
-    createLegend(svgLineChart, legendXPosition, colors_values, color, {
+    if (legend)
+      {
+        createLegend(svgLineChart, legendXPosition, colors_values, color, {
       width,
       margin,
       rectWidth: legendRectWidth,
@@ -295,6 +297,7 @@ d3.csv("NY.csv").then(ny_raw => {
       verticalPadding: legendVerticalPadding,
       horizontalPadding: legendHorizontalPadding,
     });
+  }
 
     svgLineChart.append("text")
       .attr("x", 100)
@@ -302,14 +305,14 @@ d3.csv("NY.csv").then(ny_raw => {
       .attr("transform", `rotate(-90, ${margin.left - axisTextHorizontalPadding}, ${margin.top + yAxisTextVerticalPadding})`)
       .text(y_value)
       .attr("text-anchor", "end")
-      .style("font-size", "13px");
+      .style("font-size", "14px");
 
     svgLineChart.append("text")
       .attr("x", width - margin.right - axisTextHorizontalPadding)
       .attr("y", height)
       .text(x_value)
       .attr("text-anchor", "end")
-      .style("font-size", "13px");
+      .style("font-size", "14px");
   }
 
   function createAxis(scale, orientation, transform) {
@@ -354,7 +357,7 @@ d3.csv("NY.csv").then(ny_raw => {
     radio.addEventListener('change', function() {
       metric = this.value;
       metric_column = (metric == "Consumption") ? consumptionSelect.value : "Water&Sewer Charges";
-      treemap();
+      treemap(800, 250);
       updateLineCharts();
     });
   });
@@ -363,10 +366,8 @@ d3.csv("NY.csv").then(ny_raw => {
 
   // #region TreeMap
 
-  function treemap () 
+  function treemap (w,h) 
   {
-    const w = 800;
-    const h = 400;
 
 
 
@@ -502,7 +503,7 @@ labels.each(function (d) {
 });
   };
 
-  treemap();
+  treemap(800, 250);
   console.log('metric', metric_column);
   
   // #endregion
@@ -513,7 +514,7 @@ labels.each(function (d) {
   {
     // Dimensions du graphique
     const width = w, height = h;
-    const margin = { top: 40, right: 80, bottom: 100, left: 60 }; // Augmentation du right pour 2ème axe Y
+    const margin = { top: 40, right: 80, bottom: 25, left: 60 }; // Augmentation du right pour 2ème axe Y
   
     // Regrouper les données par Borough et calculer la somme de consommation et prix total
     const groupedData = d3.rollups(
@@ -595,11 +596,10 @@ labels.each(function (d) {
   
     // Ajouter l'axe X
     svg.append("g")
-        .attr("transform", `translate(0,${height - margin.bottom})`)
-        .call(d3.axisBottom(x))
-        .selectAll("text")
-        .attr("transform", "rotate(-45)")
-        .attr("text-anchor", "end");
+      .attr("transform", `translate(0,${height - margin.bottom})`)
+      .call(d3.axisBottom(x))
+      .selectAll("text")
+      .attr("text-anchor", "middle");
   
     // Ajouter l'axe Y gauche (Consommation)
     svg.append("g")
@@ -611,6 +611,7 @@ labels.each(function (d) {
             .attr("y", 10)
             .attr("fill", "currentColor")
             .attr("text-anchor", "start")
+            .style("font-size", "12px")
             .text(`Consumption (${volume_unit})`));
   
     // Ajouter l'axe Y droit (Prix/m³)
@@ -619,15 +620,16 @@ labels.each(function (d) {
         .call(d3.axisRight(yRight))
         .call(g => g.select(".domain").remove())
         .call(g => g.append("text")
-            .attr("x", 40)
+            .attr("x", 0)
             .attr("y", 10)
             .attr("fill", "currentColor")
             .attr("text-anchor", "start")
+            .style("font-size", "12px")
             .text("Charges ($)"));
   
     // Ajouter une légende
     const legend = svg.append("g")
-        .attr("transform", `translate(${width - 150}, ${margin.top})`)
+        .attr("transform", `translate(${width - 225}, ${margin.top})`)
         .selectAll("g")
         .data(subgroups)
         .join("g")
@@ -850,7 +852,7 @@ labels.each(function (d) {
     });
 
     let ny_pricevolume_by_borough_map = [...d3.rollup(ny_filtered,  
-      v => d3.sum(v, v => v["Price/HCF"]),
+      v => d3.sum(v, v => volume_unit === "HCF" ? v["Price/HCF"] : v["Price/m3"]),
       d => d["Borough"],
       d => d["Revenue Month"])]
   
@@ -861,7 +863,7 @@ labels.each(function (d) {
           ny_pricevolume_by_borough.push({
               Borough: borough,
               "Revenue Month": date, 
-              PriceVolume: pricevolume
+              "Price / Volume": pricevolume
           });
       });
     });
@@ -871,13 +873,13 @@ labels.each(function (d) {
     ny_pricevolume_by_borough.sort((d1,d2) => d1["Revenue Month"] - d2["Revenue Month"]);
       
     (document.querySelector('input[name="option"]:checked').value == "Consumption") ? 
-      lineChart(ny_consumption_by_borough, "Revenue Month", "Consumption", "Borough", "areachart-container", 1200, 600) :
-      lineChart(ny_charges_by_borough, "Revenue Month", "Charges", "Borough", "areachart-container", 1200, 600);
+      lineChart(ny_consumption_by_borough, "Revenue Month", "Consumption", "Borough", "areachart-container", 1200, 375) :
+      lineChart(ny_charges_by_borough, "Revenue Month", "Charges", "Borough", "areachart-container", 1200, 375);
     //lineChart(ny_charges_by_borough, "Revenue Month", "Charges", "Borough", "LineChart2", 1200, 400);
 
 
     console.log('ny_pricevolume_by_borough :',ny_pricevolume_by_borough);
-    lineChart(ny_pricevolume_by_borough, "Revenue Month", "PriceVolume", "Borough", "LineChart2", 1200, 400);
-    barchart(1200, 600, ny_filtered, "LineChart1")
+    lineChart(ny_pricevolume_by_borough, "Revenue Month", "Price / Volume", "Borough", "LineChart2", 1200, 235, legend = false);
+    barchart(1200, 200, ny_filtered, "LineChart1");
     }
 });
