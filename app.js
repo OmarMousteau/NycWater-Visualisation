@@ -174,6 +174,29 @@ d3.csv("NY.csv").then(ny_raw => {
         updateScorecards();
         updateLineCharts();
       };
+
+    const legendGroup = svgMap.append("g")
+    .attr("transform", `translate(${20}, ${20})`);
+  
+    legendGroup.selectAll("g")
+      .data(BoroughsSelected)
+      .join("g")
+      .attr("transform", (d, i) => `translate(0, ${i * 20})`) // 20px d'espacement vertical
+      .each(function(d) {
+        // Ajouter le rectangle de couleur
+        d3.select(this).append("rect")
+          .attr("width", 7)
+          .attr("height", 7)
+          .attr("fill", color(d));
+        
+        // Ajouter le texte associé
+        d3.select(this).append("text")
+          .attr("x", 15)
+          .attr("y", 7)
+          .attr("fill", "currentColor")
+          .style("font-size", "12px")
+          .text(d);
+      });
 }
 
   // #endregion
