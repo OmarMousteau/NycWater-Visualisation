@@ -65,7 +65,7 @@ d3.csv("NY.csv").then(ny_raw => {
     console.log('ny filtered length :',ny_filtered.length);
     updateScorecards();
     updateLineCharts();
-    treemap(800,250);
+    treemap(800,285);
   }
 
   // Call filterData whenever the slider values change
@@ -91,7 +91,7 @@ d3.csv("NY.csv").then(ny_raw => {
     update_metric_column();
     updateScorecards();
     updateLineCharts();
-    treemap(800, 250);
+    treemap(800, 285);
   });
 
   // #endregion
@@ -196,7 +196,7 @@ d3.csv("NY.csv").then(ny_raw => {
 
   // #region LineChart
 
-  function lineChart (dataset, x_value, y_value, color_value, div_id, width, height, legend = true)
+  function lineChart (dataset, x_value, y_value, color_value, div_id, width, height, legend = true, y_unit)
   {
     const margin = { top: 20, right: 30, bottom: 30, left: 50 };
 
@@ -252,7 +252,7 @@ d3.csv("NY.csv").then(ny_raw => {
       .style("fill", d => color(d[color_value]))
       .on("mouseover", function(event, d) {
         tooltip.style("visibility", "visible")
-          .html(`${x_value}: ${d3.timeFormat("%B %Y")(d[x_value])}<br>${y_value}: ${d[y_value].toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")} ${metric_column === "Water&Sewer Charges" ? "$" : volume_unit}`);
+          .html(`${x_value}: ${d3.timeFormat("%B %Y")(d[x_value])}<br>${y_value}: ${d[y_value].toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")} ${y_unit}`);
         d3.select(this).attr("r", 8);
       })
       .on("mousemove", function(event) {
@@ -361,7 +361,7 @@ d3.csv("NY.csv").then(ny_raw => {
     radio.addEventListener('change', function() {
       metric = this.value;
       metric_column = (metric == "Consumption") ? consumptionSelect.value : "Water&Sewer Charges";
-      treemap(800, 250);
+      treemap(800, 285);
       updateLineCharts();
     });
   });
@@ -507,7 +507,7 @@ labels.each(function (d) {
 });
   };
 
-  treemap(800, 250);
+  treemap(800, 285);
   console.log('metric', metric_column);
   
   // #endregion
@@ -877,13 +877,13 @@ labels.each(function (d) {
     ny_pricevolume_by_borough.sort((d1,d2) => d1["Revenue Month"] - d2["Revenue Month"]);
       
     (document.querySelector('input[name="option"]:checked').value == "Consumption") ? 
-      lineChart(ny_consumption_by_borough, "Revenue Month", "Consumption", "Borough", "areachart-container", 1200, 375) :
-      lineChart(ny_charges_by_borough, "Revenue Month", "Charges", "Borough", "areachart-container", 1200, 375);
+      lineChart(ny_consumption_by_borough, "Revenue Month", "Consumption", "Borough", "areachart-container", 1200, 350, legend=true, metric_column === "Water&Sewer Charges" ? "$" : volume_unit) :
+      lineChart(ny_charges_by_borough, "Revenue Month", "Charges", "Borough", "areachart-container", 1200, 350, legend=true, metric_column === "Water&Sewer Charges" ? "$" : volume_unit);
     //lineChart(ny_charges_by_borough, "Revenue Month", "Charges", "Borough", "LineChart2", 1200, 400);
 
 
     console.log('ny_pricevolume_by_borough :',ny_pricevolume_by_borough);
-    lineChart(ny_pricevolume_by_borough, "Revenue Month", "Price / Volume", "Borough", "LineChart2", 1200, 235, legend = false);
+    lineChart(ny_pricevolume_by_borough, "Revenue Month", "Price / Volume", "Borough", "LineChart2", 1200, 225, legend = false, `$/${volume_unit}`);
     barchart(1200, 200, ny_filtered, "LineChart1");
     }
 });

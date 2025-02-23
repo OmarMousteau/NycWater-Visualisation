@@ -86,9 +86,12 @@ svg {
     gap: 10px;
 }
 
-#areachart-container, #treemap-container {
+#areachart-container{
+    flex: 6;
+}
+
+#treemap-container {
     flex: 5;
-    height: 40vh;
 }
 
 .MetricChoice {
