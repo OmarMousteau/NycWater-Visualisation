@@ -48,8 +48,6 @@ svg {
 #NYCMap {
     flex: 3;
     background: white;
-    border-radius: 8px;
-    border: 2px solid black;
     overflow: hidden;
 }
 

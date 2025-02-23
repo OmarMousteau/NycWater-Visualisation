@@ -311,6 +311,14 @@ d3.csv("NY.csv").then(ny_raw => {
 
     const colors_values = new Set(data.map(d => d[color_value]))
 
+    svgLineChart.append("text")
+        .attr("x", width / 2)
+        .attr("y", 1.5*margin.top)
+        .attr("text-anchor", "middle")
+        .attr("font-size", "15px")
+        .attr("font-weight", "bold")
+        .text("Price per volume unit over time");
+
     if (legend)
       {
         createLegend(svgLineChart, legendXPosition, colors_values, color, {
@@ -329,14 +337,14 @@ d3.csv("NY.csv").then(ny_raw => {
       .attr("transform", `rotate(-90, ${margin.left - axisTextHorizontalPadding}, ${margin.top + yAxisTextVerticalPadding})`)
       .text(y_value)
       .attr("text-anchor", "end")
-      .style("font-size", "14px");
+      .style("font-size", "12px");
 
     svgLineChart.append("text")
       .attr("x", width - margin.right - axisTextHorizontalPadding)
       .attr("y", height)
       .text(x_value)
       .attr("text-anchor", "end")
-      .style("font-size", "14px");
+      .style("font-size", "12px");
   }
 
   function createAxis(scale, orientation, transform) {
@@ -395,9 +403,6 @@ d3.csv("NY.csv").then(ny_raw => {
 
   function treemap (w,h) 
   {
-
-
-
     const data_tree = { name: "Root", children: [] };
     const boroughColors = colorScale;
   
@@ -435,7 +440,16 @@ d3.csv("NY.csv").then(ny_raw => {
     d3.select(`#treemap-container`).select("svg").remove();
 
     const svg = d3.select(`#treemap-container`).append("svg")
-      .attr("viewBox", [0, 0, w, h]);
+      .attr("viewBox", [0, 0, w, h + 20]);
+
+    // Ajouter un titre
+    svg.append("text")
+        .attr("x", w / 2)
+        .attr("y", 12)
+        .attr("text-anchor", "middle")
+        .attr("font-size", "16px")
+        .attr("font-weight", "bold")
+        .text(`${metric_column === "Water&Sewer Charges" ? "Charges" : "Consumption"} repartition by boulevard`);
 
     // Ajouter un div pour les tooltips (initialement caché)
   const tooltip = d3.select("body").append("div")
@@ -456,7 +470,7 @@ svg
   .append("rect")
   .attr("class", "borough")
   .attr("x", (d) => d.x0)
-  .attr("y", (d) => d.y0)
+  .attr("y", (d) => d.y0 + 20)
   .attr("width", (d) => d.x1 - d.x0)
   .attr("height", (d) => d.y1 - d.y0)
   .attr("stroke", "black") // Bordure noire pour les Boroughs
@@ -471,7 +485,7 @@ svg
   .append("rect")
   .attr("class", "location")
   .attr("x", (d) => d.x0)
-  .attr("y", (d) => d.y0)
+  .attr("y", (d) => d.y0 + 20)
   .attr("width", (d) => d.x1 - d.x0)
   .attr("height", (d) => d.y1 - d.y0)
   .attr("stroke", "white") // Bordure blanche pour les Locations
@@ -481,7 +495,7 @@ svg
     tooltip.style("visibility", "visible")
       .html(`<strong>Borough :</strong> ${d.parent.data.name} <br>
              <strong>Rue :</strong> ${d.data.name} <br>
-             <strong>Charges :</strong> ${d.value.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",")} ${metric_column === "Water&Sewer Charges" ? "$" : volume_unit}`)
+             <strong>${metric_column === "Water&Sewer Charges" ? "Charges" : "Consumption"} :</strong> ${d.value.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",")} ${metric_column === "Water&Sewer Charges" ? "$" : volume_unit}`)
       .style("left", `${event.pageX + 10}px`)
       .style("top", `${event.pageY + 10}px`);
     
@@ -511,7 +525,7 @@ const labels = svg
   .append("text")
   .attr("class", "location-label")
   .attr("x", (d) => d.x0 + 5)
-  .attr("y", (d) => d.y0 + 15)
+  .attr("y", (d) => d.y0 + 35)
   .attr("fill", "white")
   .attr("font-size", "12px")
   .attr("font-weight", "bold")
@@ -524,7 +538,7 @@ labels.each(function (d) {
   const boxWidth = d.x1 - d.x0;
   const boxHeight = d.y1 - d.y0;
 
-  if (bbox.width > boxWidth - 30 || bbox.height > boxHeight - 30) {
+  if (bbox.width > boxWidth - 10 || bbox.height > boxHeight) {
     textElement.remove(); // Supprime le texte si trop grand
   }
 });
@@ -682,7 +696,7 @@ labels.each(function (d) {
         .attr("text-anchor", "middle")
         .attr("font-size", "16px")
         .attr("font-weight", "bold")
-        .text("Water consumption vs charges per borough");
+        .text("Water consumption & charges per borough");
 
     // Ajouter un div pour les tooltips (initialement caché)
     const tooltip = d3.select("body").append("div")
@@ -732,76 +746,89 @@ labels.each(function (d) {
 
   // #region Area Chart
 
-  function areaChart (w, h, data, div_id) {
+  function StackedAreaChart(dataset, y_value, width = 1200, height = 350, div_id) {
 
-    const width = w, height = h;
-    const margin = { top: 10, right: 10, bottom: 80, left: 50 }; // Augmenter bottom pour la légende
+    const margin = {top: 10, right: 10, bottom: 80, left: 50 };
+
+    let threshold = d3.quantile(dataset.map(d => d[y_value]), 0.9999);
+
+    let data = dataset.filter(d => d[y_value] <= threshold)
   
-    // Regrouper les données par `Revenue Month` et `Borough`
-    const groupedData = d3.rollup(
-      data, 
-      v => d3.mean(v, d => d["Consumption (HCF)"] > 0 ? d["Water&Sewer Charges"] / d["Consumption (HCF)"] : 0),
-   // Correction pour PrixParVolume
-      d => d["Revenue Month"], 
-      d => d["Borough"]
-    );
+  // Filtrer le dataset pour supprimer les lignes où "Consumption (HCF)" ou "Water&Sewer Charges" sont nuls ou égaux à 0
+  const filteredData = data.filter(d =>
+    d["Consumption (HCF)"] != null &&
+    d["Water&Sewer Charges"] != null &&
+    d["Consumption (HCF)"] !== 0 &&
+    d["Water&Sewer Charges"] !== 0
+  );
   
-    // Convertir les données en tableau structuré
+  // Regrouper les données par "Revenue Month" et "Borough" et calculer la moyenne
+  const groupedData = d3.rollup(
+    filteredData,
+    v => d3.sum(v, d => d[y_value]),
+    d => d["Revenue Month"],
+    d => d["Borough"]
+  );
+  
+  
+    // Transformer les données groupées en tableau structuré
     const formattedData = Array.from(groupedData, ([date, values]) => ({
-      date, boroughs: Object.fromEntries(values)
+      date,
+      boroughs: Object.fromEntries(values)
     }));
   
-    // Créer les séries empilées par `Borough`
-    const boroughs = Array.from(new Set(data.map(d => d["Borough"])));
-    
+  
+    formattedData.sort((a, b) => d3.ascending(a.date, b.date));
+  
+    // Créer les séries empilées par borough
     const series = d3.stack()
-        .keys(boroughs) // Liste des Boroughs uniques
-        .value((d, key) => d.boroughs[key] || 0) // Valeur par Borough (mettre 0 si absent)
-      (formattedData);
+      .keys(BoroughsSelected)
+      .value((d, key) => d.boroughs[key] || 0)(formattedData);
   
-    // Définir les échelles
+    // Définir l'échelle X (pour les dates)
     const x = d3.scaleUtc()
-        .domain(d3.extent(formattedData, d => d.date))
-        .range([margin.left, width - margin.right]);
+      .domain(d3.extent(formattedData, d => d.date))
+      .range([margin.left, width - margin.right]);
   
+    // Définir l'échelle Y
     const y = d3.scaleLinear()
-        .domain([0, d3.max(series, d => d3.max(d, d => d[1]))])
-        .nice()
-        .range([height - margin.bottom, margin.top]);
+      .domain([0, d3.max(series, s => d3.max(s, d => d[1]))])
+      .nice()
+      .range([height - margin.bottom, margin.top]);
   
-    const color = d3.scaleOrdinal()
-        .domain(boroughs)
-        .range(d3.schemeTableau10);
+    // Définir l'échelle de couleur pour les boroughs
+    const color = colorScale;
   
-    // Définir l'aire empilée
+    // Définir la zone empilée
     const area = d3.area()
-        .x(d => x(d.data.date))
-        .y0(d => y(d[0]))
-        .y1(d => y(d[1]));
+      .x(d => x(d.data.date))
+      .y0(d => y(d[0]))
+      .y1(d => y(d[1]));
   
-    d3.select(`#${div_id}`).select("svg").remove();
+      d3.select(`#${div_id}`).select("svg").remove();
   
-    // Créer le conteneur SVG
-    const svg = d3.select(`#${div_id}`).append("svg")
-        .attr("width", width)
-        .attr("height", height)
-        .attr("viewBox", [0, 0, width, height])
-        .attr("style", "max-width: 100%; height: auto;");
+      // Créer le conteneur SVG
+      const svg = d3.select(`#${div_id}`).append("svg")
+          .attr("width", width)
+          .attr("height", height)
+          .attr("viewBox", [0, 0, width, height])
+          .attr("style", "max-width: 100%; height: auto;");
   
     // Ajouter l'axe Y
     svg.append("g")
-        .attr("transform", `translate(${margin.left},0)`)
-        .call(d3.axisLeft(y))
-        .call(g => g.select(".domain").remove())
-        .call(g => g.selectAll(".tick line")
-            .clone().attr("x2", width - margin.left - margin.right)
-            .attr("stroke-opacity", 0.1))
-        .call(g => g.append("text")
-            .attr("x", -margin.left)
-            .attr("y", 10)
-            .attr("fill", "currentColor")
-            .attr("text-anchor", "start")
-            .text("↑ Prix/Volume"));
+      .attr("transform", `translate(${margin.left},0)`)
+      .call(d3.axisLeft(y))
+      .call(g => g.select(".domain").remove())
+      .call(g => g.selectAll(".tick line")
+      .clone().attr("x2", width - margin.left - margin.right)
+      .attr("stroke-opacity", 0.05))
+      .call(g => g.append("text")
+      .attr("x", 10)
+      .attr("y", 10)
+      .attr("fill", "currentColor")
+      .attr("text-anchor", "start")
+      .style("font-size", "14px")
+      .text(y_value));
   
     // Ajouter les zones empilées
     svg.append("g")
@@ -815,29 +842,74 @@ labels.each(function (d) {
   
     // Ajouter l'axe X
     svg.append("g")
-        .attr("transform", `translate(0,${height - margin.bottom})`)
-        .call(d3.axisBottom(x).ticks(width / 80).tickSizeOuter(0));
+      .attr("transform", `translate(0,${height - margin.bottom})`)
+      .call(d3.axisBottom(x).ticks(width / 80).tickSizeOuter(0));
+
+    // Ajouter un titre
+    svg.append("text")
+      .attr("x", width / 2)
+      .attr("y", 15)
+      .attr("text-anchor", "middle")
+      .attr("font-size", "18px")
+      .attr("font-weight", "bold")
+      .text(`${y_value === "Water&Sewer Charges" ? "Charges" : "Consumption"} monthly trend`);
+
+    // const legendGroup = svg.append("g")
+    //   .attr("transform", `translate(${width - margin.left - 100}, ${margin.top})`);
   
-    // Ajouter la légende
-    const legend = svg.append("g")
-        .attr("transform", `translate(${margin.left}, ${height - margin.bottom + 40})`)
-        .selectAll("g")
-        .data(boroughs)
-        .join("g")
-        .attr("transform", (d, i) => `translate(${i * 100}, 0)`); // Espacement horizontal
-  
-    legend.append("rect")
-        .attr("width", 7)
-        .attr("height", 7)
-        .attr("fill", d => color(d));
-  
-    legend.append("text")
-        .attr("x", 15)
-        .attr("y", 7)
-        .attr("fill", "currentColor")
-        .style("font-size", "12px")
-        .text(d => d);
+    // legendGroup.selectAll("g")
+    //   .data(BoroughsSelected)
+    //   .join("g")
+    //   .attr("transform", (d, i) => `translate(0, ${i * 20})`) // 20px d'espacement vertical
+    //   .each(function(d) {
+    //     // Ajouter le rectangle de couleur
+    //     d3.select(this).append("rect")
+    //       .attr("width", 7)
+    //       .attr("height", 7)
+    //       .attr("fill", color(d));
+        
+    //     // Ajouter le texte associé
+    //     d3.select(this).append("text")
+    //       .attr("x", 15)
+    //       .attr("y", 7)
+    //       .attr("fill", "currentColor")
+    //       .style("font-size", "12px")
+    //       .text(d);
+    //   });
+
+    // Ajouter un div pour les tooltips (initialement caché)
+    const tooltip = d3.select("body").append("div")
+      .attr("class", "tooltip")
+      .style("position", "absolute")
+      .style("background", "rgba(0, 0, 0, 0.8)")
+      .style("color", "white")
+      .style("padding", "8px")
+      .style("border-radius", "4px")
+      .style("visibility", "hidden")
+      .style("font-size", "12px");
+
+    // Ajouter les zones empilées avec les tooltips
+    svg.append("g")
+      .selectAll("path")
+      .data(series)
+      .join("path")
+        .attr("fill", d => color(d.key))
+        .attr("d", area)
+        .on("mouseover", function(event, d) {
+          tooltip.style("visibility", "visible")
+            .html(`<strong>Borough:</strong> ${d.key}` );
+          d3.select(this).attr("fill", d3.color(color(d.key)).darker(0.8));
+        })
+        .on("mousemove", function(event) {
+          tooltip.style("left", `${event.pageX + 10}px`)
+            .style("top", `${event.pageY + 10}px`);
+        })
+        .on("mouseout", function(event, d) {
+          tooltip.style("visibility", "hidden");
+          d3.select(this).attr("fill", color(d.key));
+        });
   }
+  
 
   // #endregion
 
@@ -888,11 +960,11 @@ labels.each(function (d) {
   
     ny_pricevolume_by_borough_map.forEach(([borough, dataMap]) => {
       dataMap.forEach((pricevolume, date) => {
-          ny_pricevolume_by_borough.push({
+            ny_pricevolume_by_borough.push({
               Borough: borough,
               "Revenue Month": date, 
-              "Price / Volume": pricevolume
-          });
+              [`Price / ${volume_unit}`]: pricevolume
+            });
       });
     });
   
@@ -901,13 +973,42 @@ labels.each(function (d) {
     ny_pricevolume_by_borough.sort((d1,d2) => d1["Revenue Month"] - d2["Revenue Month"]);
       
     (document.querySelector('input[name="option"]:checked').value == "Consumption") ? 
-      lineChart(ny_consumption_by_borough, "Revenue Month", "Consumption", "Borough", "areachart-container", 1200, 350, legend=true, metric_column === "Water&Sewer Charges" ? "$" : volume_unit) :
-      lineChart(ny_charges_by_borough, "Revenue Month", "Charges", "Borough", "areachart-container", 1200, 350, legend=true, metric_column === "Water&Sewer Charges" ? "$" : volume_unit);
+      //lineChart(ny_consumption_by_borough, "Revenue Month", "Consumption", "Borough", "areachart-container", 1200, 350, legend=true, metric_column === "Water&Sewer Charges" ? "$" : volume_unit) :
+      //lineChart(ny_charges_by_borough, "Revenue Month", "Charges", "Borough", "areachart-container", 1200, 350, legend=true, metric_column === "Water&Sewer Charges" ? "$" : volume_unit);
+      (StackedAreaChart(ny_filtered, consumptionSelect.value, 1200, 450, "areachart-container")) :
+      StackedAreaChart(ny_filtered, "Water&Sewer Charges", 1200, 450, "areachart-container");
     //lineChart(ny_charges_by_borough, "Revenue Month", "Charges", "Borough", "LineChart2", 1200, 400);
 
 
     console.log('ny_pricevolume_by_borough :',ny_pricevolume_by_borough);
-    lineChart(ny_pricevolume_by_borough, "Revenue Month", "Price / Volume", "Borough", "LineChart2", 1200, 225, legend = false, `$/${volume_unit}`);
+    lineChart(ny_pricevolume_by_borough, "Revenue Month", [`Price / ${volume_unit}`], "Borough", "LineChart2", 1200, 225, legend = false, `$/${volume_unit}`);
+    
     barchart(1200, 200, ny_filtered, "LineChart1");
     }
 });
+
+// Get the modal
+var modal = document.getElementById("myModal");
+
+// Get the link that opens the modal
+var link = document.getElementById("info-link");
+
+// Get the <span> element that closes the modal
+var span = document.getElementsByClassName("close")[0];
+
+// When the user clicks the link, open the modal 
+link.onclick = function() {
+    modal.style.display = "block";
+}
+
+// When the user clicks on <span> (x), close the modal
+span.onclick = function() {
+    modal.style.display = "none";
+}
+
+// When the user clicks anywhere outside of the modal, close it
+window.onclick = function(event) {
+    if (event.target == modal) {
+        modal.style.display = "none";
+    }
+}
