@@ -956,7 +956,7 @@ labels.each(function (d) {
     });
 
     let ny_pricevolume_by_borough_map = [...d3.rollup(ny_filtered,  
-      v => d3.sum(v, v => volume_unit === "HCF" ? v["Price/HCF"] : v["Price/m3"]),
+      v => d3.mean(v, v => volume_unit === "HCF" ? v["Price/HCF"] : v["Price/m3"]),
       d => d["Borough"],
       d => d["Revenue Month"])]
   
